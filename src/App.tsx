@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import CardComp from "./components/CardComp"
 import cards from "./data/cards.json"
 import type { TCard, TCardList } from "./types/card.types"
 import ModalComp from "./components/ModalComp"
 
 const App = () => {
+	// total unique pairs in the deck
+	const totalPairs = useMemo(() => cards.length, [])
 	// Create pairs of cards
 	const createGameCards = (): TCardList => {
 		const pairs = cards.flatMap((card) => [
@@ -16,80 +18,116 @@ const App = () => {
 
 	// Shuffle cards
 	const shuffleCards = (cards: TCardList): TCardList => {
-		return cards.sort(() => Math.random() - 0.5)
+		// Fisher–Yates style shuffle (non-mutating)
+		const arr = [...cards]
+		for (let i = arr.length - 1; i > 0; i--) {
+			const j = Math.floor(Math.random() * (i + 1))
+			;[arr[i], arr[j]] = [arr[j], arr[i]]
+		}
+		return arr
 	}
 
 	// Game cards state
 	const [gameCards, setGameCards] = useState<TCardList>(
-		createGameCards() // shuffled cards
+		shuffleCards(createGameCards())
 	)
 	// flipped cards with an array of cards names
 	const [flippedCards, setFlippedCards] = useState<TCard["name"][]>([])
+	// track ids selected in current turn to avoid double clicking the same card
+	const [selectedIds, setSelectedIds] = useState<number[]>([])
 
 	// number of moves
 	const [moves, setMoves] = useState(0)
 
+	// number of mistakes (mismatches)
+	const [mistakes, setMistakes] = useState(0)
+
 	// number of matches
 	const [matches, setMatches] = useState(0)
 
-	// game state
+	// game state (true shows modal; used for start screen and final score)
 	const [gameOver, setGameOver] = useState(true)
 
-	const handleCardClick = (clickedCard: TCard) => {
-		// Check if the card is already matched
-		if (clickedCard.matched) return
-		// Check if we have have 2 cards flipped already
-		if (flippedCards.length === 2) return
+	const resetGame = () => {
+		setGameCards(shuffleCards(createGameCards()))
+		setFlippedCards([])
+		setMoves(0)
+		setMatches(0)
+		setMistakes(0)
+	}
 
-		// Flip the card
+	const handleCardClick = (clickedCard: TCard) => {
+		// block input if game not started or resolving
+		if (gameOver) return
+		// already matched or already face-up
+		if (clickedCard.matched || clickedCard.flipped) return
+		// at most 2 cards at a time
+		if (flippedCards.length === 2) return
+		// prevent selecting the same card twice in a turn
+		if (selectedIds.includes(clickedCard.id)) return
+
+		// Flip the specific card to face-up (no toggle to avoid double-click issues)
 		setGameCards((prev) =>
 			prev.map((card) =>
-				card.id === clickedCard.id ? { ...card, flipped: !card.flipped } : card
+				card.id === clickedCard.id ? { ...card, flipped: true } : card
 			)
 		)
-		setFlippedCards((prev) => [...prev, clickedCard["name"]])
+		setFlippedCards((prev) => [...prev, clickedCard.name])
+		setSelectedIds((prev) => [...prev, clickedCard.id])
 	}
 
 	useEffect(() => {
-		if (flippedCards.length === 2) {
-			setMoves((prev) => prev + 1)
-			// Check if the flipped cards match
-			const [firstCard, secondCard] = flippedCards
-			if (firstCard === secondCard) {
-				// Increment the number of matches
-				setMatches((prev) => prev + 1)
-				setFlippedCards([]) // empty the flipped cards array
-				// set the matched cards to true
+		if (flippedCards.length !== 2) return
+
+		setMoves((prev) => prev + 1)
+		const [firstName, secondName] = flippedCards
+
+		if (firstName === secondName) {
+			// Match found: mark all cards with that name as matched
+			setGameCards((prev) =>
+				prev.map((card) =>
+					card.name === firstName ? { ...card, matched: true } : card
+				)
+			)
+			// Increment matches and possibly end game
+			setMatches((prev) => {
+				const next = prev + 1
+				if (next === totalPairs) {
+					setGameOver(true)
+				}
+				return next
+			})
+			setFlippedCards([])
+			setSelectedIds([])
+		} else {
+			// No match: increment mistakes and flip both back after ~1s
+			setMistakes((prev) => prev + 1)
+			const toFlipBack = new Set(flippedCards)
+			setTimeout(() => {
 				setGameCards((prev) =>
 					prev.map((card) =>
-						card.name === firstCard ? { ...card, matched: true } : card
+						toFlipBack.has(card.name) ? { ...card, flipped: false } : card
 					)
 				)
-			} else {
-				// Flip the cards back
-				setTimeout(() => {
-					setGameCards((prev) =>
-						prev.map((card) =>
-							// find the cards to flip back to avoid flipping all of them
-							flippedCards.some((fc) => fc === card.name)
-								? { ...card, flipped: false }
-								: card
-						)
-					)
-					setFlippedCards([]) // empty the flipped cards array
-				}, 1000)
-			}
+				setFlippedCards([])
+				setSelectedIds([])
+			}, 1000)
 		}
-		// end of the game
-		if (matches === gameCards.length / 2) {
-			setGameOver(true)
-		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [flippedCards])
+
+	// Start a new game whenever the modal is closed (gameOver -> false)
+	useEffect(() => {
+		if (!gameOver) {
+			resetGame()
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [gameOver])
 
 	return (
 		<div className="main_section">
 			<h1>Memory Game</h1>
-			<p>Number of moves: {moves}</p>
+			<p>Moves: {moves} | Misses: {mistakes} | Pairs: {matches}/{totalPairs}</p>
 			<div className="card_container">
 				{gameCards.map((card: TCard) => {
 					return (
@@ -97,7 +135,13 @@ const App = () => {
 					)
 				})}
 			</div>
-			<ModalComp showModal={gameOver} toggleModal={setGameOver} />
+			<ModalComp
+				showModal={gameOver}
+				toggleModal={setGameOver}
+				moves={moves}
+				mistakes={mistakes}
+				pairs={{ matched: matches, total: totalPairs }}
+			/>
 		</div>
 	)
 }

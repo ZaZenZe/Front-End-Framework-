@@ -1,31 +1,45 @@
-# Memory Game
+# Memory Game (React + TypeScript)
 
-## 🚀 Getting Started
+This project is a fork of the professor’s starter template. I kept the original structure/style and built the missing game mechanics on top. Below I acknowledge the base, then focus on what I added and how I implemented it.
 
-1. Fork the repo (Make a copy of it to your repos)
-2. Clone your project on your machine
-3. Install dependencies and run it locally
+## 🎮 Gameplay Rules
 
-## Prerequisites
+- Player clicks a card → it flips and shows the hero image
+- Player clicks a second card → it flips
+- If heroes match → cards stay flipped, pair is complete
+- If no match → both cards flip back after ~1 second, missed count increases
+- Game ends when all 6 pairs are matched
+- Final score shows an emoji based on how many mistakes were made
 
-- Node.js (v16 or higher)
-- npm or yarn
+Emoji scale (based on mistakes):
+- 0–2: 🏆
+- 3–4: 😄
+- 5–7: 🙂
+- 8–10: 😐
+- 11+: 😵
 
-```bash
-bash# Clone the repository
-git clone https://github.com/YOUR_USERNAME/memory-card-react.git
+## ✅ What’s new in my fork
 
-# Navigate to project directory
-cd memory-card-react
+- Full gameplay wiring: flip → match/mismatch → resolve → end-of-game
+- Fixed shuffling: replaced naive random sort with unbiased Fisher–Yates on each new game
+- Flip logic with precise rollback: only the two non-matching cards flip back after ~1s
+- Counters: Moves (turns), Misses (mismatches), and Pairs matched
+- End-of-game detection when all 6 pairs are matched
+- Final score modal with emoji rating based on mistakes (clear scale below)
+- Safer interactions: ignore clicks on matched/already-flipped cards, avoid double-clicking the same card in a turn, and block input while two flips are resolving
+- Restart flow: closing the modal starts a fresh, shuffled game and resets all counters
 
-# Install dependencies
-npm install
+## 🧠 How I built on the base (brief)
 
-# Start development server
-npm run dev
-```
+- I kept the existing components and styles but connected the game loop:
+	- `App.tsx`: Manages deck, shuffled pairs, flips, moves, mistakes, matches, and `gameOver`.
+	- On each pair of flips, I compare by hero name. If they match, I mark both as `matched`. If not, I flip them back after ~1s and increment mistakes.
+	- Click guards prevent re-clicking the same card in a turn or interacting while two cards are resolving.
+	- Closing the modal resets the game (reshuffle + counters cleared), so you can immediately start again.
+	- `ModalComp`: Displays Moves/Misses/Pairs and an emoji based on mistakes.
+	- `CardComp` + CSS Modules: drive the flip animation based on the `flipped` flag.
 
-## 📁 Project Structure
+## 📁 Project Structure (base + additions)
 
 ```
 memory-card-react/
@@ -64,34 +78,6 @@ memory-card-react/
 └── vite.config.ts
 ```
 
-## 🏗️ Architecture Overview
-
-### Components
-
-- CardComp: Individual card component handling flip animations and click events
-- App: Main game component managing game state, logic, and card interactions
-
-## Data Flow
-
-- cards.json → Contains base hero data (6 unique heroes)
-- App.tsx → Creates pairs, shuffles cards, manages game state
-- CardComp → Receives card data and click handlers as props
-- Types → TypeScript definitions ensure type safety
-
-## Key Features
-
-- State Management: React useState for game state, flipped cards, and moves
-- Card Matching Logic: Compares hero names when two cards are flipped
-- Animation: CSS modules with flip animations and hover effects
-- TypeScript: Full type safety with custom type definitions
-
-## 🎨 Styling
-
-- CSS Modules: Scoped component styles to prevent conflicts
-- CSS Custom Properties: Consistent theming with CSS variables
-- Animations: Smooth card flip transitions and bounce effects
-- Responsive Design: Grid layout that adapts to different screen sizes
-
 ## 🔧 Technologies Used
 
 - React 18 - UI library
@@ -100,8 +86,31 @@ memory-card-react/
 - CSS Modules - Scoped component styling
 - ESLint - Code linting and formatting
 
-## 🙏 Acknowledgments
+## 🚀 Run locally
 
-- Superhero images used for educational purposes [Printerest](https://www.pinterest.com/pin/6473993211278271/)
-- Inspired by classic memory card games
-- Built as a learning project for React and TypeScript
+Prerequisites: Node.js (LTS recommended) and npm.
+
+```powershell
+# Install dependencies
+npm install
+
+# Start the dev server (PowerShell may block npm scripts on some machines)
+npm run dev
+```
+
+If Windows PowerShell blocks scripts (execution policy), use one of these:
+
+```powershell
+# Temporary bypass for this session
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass; npm run dev
+
+# Or run via cmd from PowerShell
+cmd /c "npm run dev"
+```
+
+Optional build:
+
+```powershell
+cmd /c "npm run build"
+```
+

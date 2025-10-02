@@ -3,22 +3,41 @@ import styles from "./ModalComp.module.css"
 export type TModalProps = {
 	showModal: boolean
 	toggleModal: React.Dispatch<React.SetStateAction<boolean>>
+	moves: number
+	mistakes: number
+	pairs: { matched: number; total: number }
 }
 
-const ModalComp = ({ showModal, toggleModal }: TModalProps) => {
+const getEmojiForMistakes = (mistakes: number) => {
+	if (mistakes <= 2) return "🏆"
+	if (mistakes <= 4) return "😄"
+	if (mistakes <= 7) return "🙂"
+	if (mistakes <= 10) return "😐"
+	return "😵"
+}
+
+const ModalComp = ({ showModal, toggleModal, moves, mistakes, pairs }: TModalProps) => {
+	const handleClose = () => toggleModal(false)
+	const emoji = getEmojiForMistakes(mistakes)
+	const title = pairs.matched === pairs.total ? "Final Score" : "Memory Game"
+
 	return (
 		<section
 			className={styles.final_result}
 			style={{ visibility: showModal ? "visible" : "hidden" }}
 		>
-			<button onClick={() => toggleModal(false)} className={styles.final_btn}>X</button>
+			<button onClick={handleClose} className={styles.final_btn}>X</button>
 			<div className={styles.final_container}>
-				<h2>Final Score</h2>
-				<span className={styles.final_score}>score</span>
-				<span className={styles.final_icon + " final_icon animate__delay-1s"}>
-					🎃
+				<h2>{title}</h2>
+				<span className={styles.final_score}>
+					Moves: {moves} • Misses: {mistakes} • Pairs: {pairs.matched}/{pairs.total}
 				</span>
-				<span onClick={() => toggleModal(false)} className={styles.final_text}>Click to start again</span>
+				<span className={styles.final_icon + " final_icon animate__delay-1s"}>
+					{emoji}
+				</span>
+				<span onClick={handleClose} className={styles.final_text}>
+					Click to start {pairs.matched === pairs.total ? "again" : "the game"}
+				</span>
 			</div>
 		</section>
 	)
