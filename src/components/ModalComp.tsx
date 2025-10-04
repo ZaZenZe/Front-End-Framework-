@@ -24,20 +24,23 @@ const ModalComp = ({ showModal, toggleModal, moves, mistakes, pairs }: TModalPro
 	return (
 		<section
 			className={styles.final_result}
+			role="dialog"
+			aria-modal="true"
+			aria-hidden={!showModal}
 			style={{ visibility: showModal ? "visible" : "hidden" }}
 		>
-			<button onClick={handleClose} className={styles.final_btn}>X</button>
+			<button onClick={handleClose} className={styles.final_btn} aria-label="Close dialog">X</button>
 			<div className={styles.final_container}>
 				<h2>{title}</h2>
 				<span className={styles.final_score}>
 					Moves: {moves} • Misses: {mistakes} • Pairs: {pairs.matched}/{pairs.total}
 				</span>
-				<span className={styles.final_icon + " final_icon animate__delay-1s"}>
+				<span className={styles.final_icon} aria-label="Performance rating emoji">
 					{emoji}
 				</span>
-				<span onClick={handleClose} className={styles.final_text}>
+				<button onClick={handleClose} className={styles.final_text} aria-label="Start new game">
 					Click to start {pairs.matched === pairs.total ? "again" : "the game"}
-				</span>
+				</button>
 			</div>
 		</section>
 	)

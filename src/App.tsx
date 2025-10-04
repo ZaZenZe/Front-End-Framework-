@@ -48,6 +48,20 @@ const App = () => {
 	// game state (true shows modal; used for start screen and final score)
 	const [gameOver, setGameOver] = useState(true)
 
+	// THEME HANDLING
+	const [theme, setTheme] = useState<"light" | "dark">(() => {
+		const stored = window.localStorage.getItem("memory-theme") as "light" | "dark" | null
+		if (stored) return stored
+		return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? "dark" : "light"
+	})
+
+	useEffect(() => {
+		document.documentElement.setAttribute("data-theme", theme)
+		window.localStorage.setItem("memory-theme", theme)
+	}, [theme])
+
+	const toggleTheme = () => setTheme((t) => (t === "light" ? "dark" : "light"))
+
 	const resetGame = () => {
 		setGameCards(shuffleCards(createGameCards()))
 		setFlippedCards([])
@@ -125,16 +139,27 @@ const App = () => {
 	}, [gameOver])
 
 	return (
-		<div className="main_section">
-			<h1>Memory Game</h1>
-			<p>Moves: {moves} | Misses: {mistakes} | Pairs: {matches}/{totalPairs}</p>
-			<div className="card_container">
-				{gameCards.map((card: TCard) => {
-					return (
+		<>
+			<header className="top-bar">
+				<div className="brand-badge">Goofy <span className="badge-accent">Memory</span></div>
+				<button className="theme-toggle" onClick={toggleTheme} aria-label="Toggle color theme">
+					{theme === "light" ? "🌙 Dark" : "☀️ Light"}
+				</button>
+			</header>
+			<main className="main_section">
+				<h1>Test da memory</h1>
+				<div className="stats-bar" aria-label="Game statistics">
+					<span>Moves: {moves}</span>
+					<span>Misses: {mistakes}</span>
+					<span>Pairs: {matches}/{totalPairs}</span>
+				</div>
+				<div className="card_container">
+					{gameCards.map((card: TCard) => (
 						<CardComp card={card} clickProp={handleCardClick} key={card.id} />
-					)
-				})}
-			</div>
+					))}
+				</div>
+			</main>
+			<footer className="footer-note">Made by Ricky • Theme: {theme}</footer>
 			<ModalComp
 				showModal={gameOver}
 				toggleModal={setGameOver}
@@ -142,7 +167,7 @@ const App = () => {
 				mistakes={mistakes}
 				pairs={{ matched: matches, total: totalPairs }}
 			/>
-		</div>
+		</>
 	)
 }
 

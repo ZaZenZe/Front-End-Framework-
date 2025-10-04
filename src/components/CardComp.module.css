@@ -1,58 +1,72 @@
+/* New professional card styling */
 .card {
-    max-width: 240px;
-    aspect-ratio: 9/13;
-    background-color: var(--primary);
-    border: 1px solid var(--primary-alt);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border-radius: 2px;
-    font-size: 2em;
-    cursor: pointer;
     position: relative;
-    transition: all 260ms ease-in-out;
-    color: var(--contrast);
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    transform-style: preserve-3d;
-    transform: rotateY(180deg);
-}
-
-.card::before {
-    content: "";
     width: 100%;
     height: 100%;
+    border-radius: 16px;
+    cursor: pointer;
+    transform-style: preserve-3d;
+    perspective: 1200px;
+    background: transparent;
+    box-shadow: 0 2px 6px rgba(0,0,0,.25),0 8px 22px -6px rgba(0,0,0,.35);
+    overflow: hidden;
+    border: none;
+    isolation: isolate;
+    transition: box-shadow 180ms var(--ease), transform 140ms var(--ease);
+}
+
+.card::before, .card::after { display: none; }
+
+.inner { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; border-radius: inherit; transform-style: preserve-3d; }
+
+/* face back */
+.faceBack, .faceFront {
     position: absolute;
     inset: 0;
-    background-color: var(--secondary);
-    transition: all 190ms ease-in-out;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    border-radius: inherit;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.card:hover {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+.faceBack {
+    background: linear-gradient(135deg,var(--brand-accent) 0%, var(--brand-accent-alt) 100%);
+    color: #fff;
+    font-weight: 600;
+    font-size: clamp(.9rem,1.8vw,1.2rem);
+    letter-spacing: 1px;
+    text-transform: uppercase;
 }
 
-.animate__rotate {
-    transform: rotateY(0);
+.faceFront { transform: rotateY(180deg); background: transparent; }
+.faceFront img { object-fit: cover; width: 100%; height: 100%; filter: saturate(112%) contrast(104%); padding: 0; background: none; }
+
+.animate__rotate .inner { transform: rotateY(180deg); }
+
+.card:hover { box-shadow: 0 4px 10px rgba(0,0,0,.35),0 10px 28px -6px rgba(0,0,0,.45); transform: translateY(-4px); }
+.card:hover::before, .card:hover::after { display: none; }
+
+.matched { box-shadow: 0 0 0 2px var(--brand-success), 0 4px 14px -4px rgba(0,0,0,.55); filter: saturate(118%) brightness(1.04); }
+
+.matched::before, .matched::after { display: none; }
+
+.card:active { transform: translateY(2px) scale(.98); }
+
+@media (hover: hover) and (pointer: fine) {
+    /* reserved for fine-pointer specific enhancements if needed */
 }
 
-.card.animate__rotate:before {
-    opacity: 0;
+/* Reduced motion accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .card, .inner { transition-duration: 0ms !important; animation: none !important; }
 }
 
-.card.animate__rotate:hover {
-    box-shadow: 0 0 0 0 var(--secondary);
-}
+/* Smooth fast flip via direct transition */
 
-.animate__rotate {
-    transform: rotateY(0);
-}
+.inner { transition: transform 320ms cubic-bezier(.45,.1,.15,1.0); }
 
-.card.animate__rotate:before {
-    opacity: 0;
-}
-
-.card.animate__rotate>span {
-    opacity: 0;
-}
+/* ensure full image displayed without borders */

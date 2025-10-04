@@ -14,9 +14,17 @@ const CardComp = ({ clickProp, card }: TCardProps) => {
 	return (
 		<article
 			onClick={handleClick}
-			className={`${styles.card} ${card.flipped ? styles.animate__rotate : ""}`}
+			aria-label={card.matched ? `${card.name} matched` : card.flipped ? card.name : "Hidden card"}
+			className={`${styles.card} ${card.flipped ? styles.animate__rotate : ""} ${card.matched ? styles.matched : ""}`}
+			role="button"
+			tabIndex={0}
 		>
-			<img src={`./imgs/${card.image}`} alt={card.name} />
+			<div className={styles.inner}>
+				<div className={styles.faceBack}>Memory Hero</div>
+				<div className={styles.faceFront}>
+					<img src={`./imgs/${card.image}`} alt={card.name} />
+				</div>
+			</div>
 		</article>
 	)
 }
